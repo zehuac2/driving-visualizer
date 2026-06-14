@@ -19,42 +19,58 @@ server and driving the car in the browser.
 
 ## Stack
 
-| Layer        | Technology                             |
-| ------------ | -------------------------------------- |
-| Runtime      | Bun 1.3.x                              |
-| Bundler      | Vite 8 (rolldown under the hood)       |
-| 3D rendering | Three.js 0.184                         |
-| UI           | React 19 (no state management library) |
-| Language     | TypeScript 5.9, strict mode            |
+| Layer        | Technology                                        |
+| ------------ | ------------------------------------------------- |
+| Runtime      | Bun 1.3.x                                         |
+| Bundler      | Vite 8 (rolldown under the hood)                  |
+| 3D rendering | Three.js 0.184 via @react-three/fiber 9 + drei 10 |
+| UI           | React 19 (no state management library)            |
+| Language     | TypeScript 5.9, strict mode                       |
 
 Dependencies are **pinned to exact versions** in `package.json` (no `^` or `~`).
 When adding a new dependency, pin the version: `bun add <pkg>@<exact-version>`.
 
 ## Architecture
 
-The codebase separates the tight render loop from the React UI deliberately:
+The scene is a declarative @react-three/fiber tree. The per-frame simulation
+runs in a single `useFrame` loop that mutates Three.js objects through refs —
+React state is reserved for params, throttled telemetry, and UI toggles.
 
 ```
 src/
 ├── sim/
-│   ├── CarModel.ts      Pure TypeScript: car state, params, bicycle-model step(), getCorners()
-│   └── input.ts         Keyboard held-state tracker; exports readInput() → StepInput
+│   ├── CarModel.ts         Pure TypeScript: car state, params, bicycle-model step(), getCorners()
+│   ├── input.ts            Pure mapKeysToInput(Set) → StepInput (no globals, no listeners)
+│   └── useKeyboardInput.ts Hook: window keydown/keyup → held-keys ref; stable readInput(); onWake
 ├── scene/
-│   ├── SceneManager.ts  Three.js scene owner: camera, grid, car mesh, rAF loop, pan/zoom
-│   └── SweptPath.ts     Growing polyline trails (4 corners) + translucent swept-area fill
+│   ├── Scene.tsx           R3F tree owner: camera, MapControls, grid, the single useFrame loop,
+│   │                       throttled telemetry, on-demand invalidate(), imperative SceneHandle
+│   ├── Car.tsx             Declarative car group (body, outline, arrow, 4 wheels) from params
+│   └── SweptPath.tsx       Growing polyline trails (4 corners) + translucent fill via imperative handle
 ├── ui/
 │   ├── ParameterPanel.tsx  Sliders for all CarParams; calls onChange on every change
 │   ├── Telemetry.tsx       Read-only live readout (heading, steering, turning radius, …)
 │   ├── Toolbar.tsx         Action buttons (reset, clear, center steering, toggle fill, follow)
 │   └── Controls.tsx        Static key-reference legend
-├── App.tsx              Root: creates SceneManager once (useEffect), wires params & telemetry
-└── main.tsx             React root mount
+├── App.tsx                 Root: <Canvas orthographic frameloop="demand"> + Scene + UI overlays
+└── main.tsx                React root mount
 ```
 
-**Key invariant:** `SceneManager` owns the `requestAnimationFrame` loop and
-mutates the Three.js scene every frame. React only re-renders when telemetry
-data or params change — never on every animation frame. Shared mutable state
-(params) flows via `SceneManager.updateParams()`, not through React state.
+**Key invariants:**
+
+- `Scene` runs one `useFrame` loop that advances the car state held in a
+  `useRef` and mutates the car group / wheel objects directly. Never call
+  `setState` per frame; physics state never lives in React state.
+- Rendering is **on-demand** (`frameloop="demand"`). The loop calls
+  `invalidate()` only while the car or its steering is still changing;
+  `useKeyboardInput`'s `onWake` re-wakes it on keydown; imperative actions and
+  `MapControls` invalidate on demand. When nothing moves, the canvas is idle.
+- Telemetry is pushed to React (~15 Hz, throttled) so `App` re-renders don't
+  reconcile the Canvas tree at 60 fps. Params flow down as props; changing a
+  shape param rebuilds `Car`'s geometry via reconciliation (no manual rebuild).
+- Toolbar actions reach the scene through the `SceneHandle` imperative ref
+  (`reset`, `clearTraces`, `centerSteering`, `centerCamera`); fill visibility is
+  a declarative `fillVisible` prop.
 
 ## Simulation model
 
@@ -82,7 +98,7 @@ Use the `@/` alias for all imports that cross a directory boundary. `@/` maps to
 ```ts
 // good
 import { step } from '@/sim/CarModel.ts';
-import type { TelemetryData } from '@/scene/SceneManager.ts';
+import type { TelemetryData } from '@/scene/Scene.tsx';
 
 // bad — never use ../
 import { step } from '../sim/CarModel.ts';
@@ -98,23 +114,31 @@ Same-directory imports use `./` as normal.
 - Components under `src/ui/` receive only plain data and callback props; they do
   not import from `src/scene/`.
 
-## Three.js conventions
+## Three.js / R3F conventions
 
 - All geometries are in the XY plane at small positive Z offsets to avoid
   Z-fighting (grid at 0, car body at 0.02, wheels at 0.03, traces at 0.01).
-- The car body `Mesh` local origin is the rear axle center. Wheel meshes are
-  children of the car body so they inherit its transform automatically.
+- The `Car` `<group>` local origin is the rear axle center; the body, arrow, and
+  wheels are children, so they inherit its transform. Front wheels are wrapped
+  in their own object so the loop can set their steering `rotation.z`
+  independently.
 - `SweptPath` pre-allocates `Float32Array` buffers of `MAX_POINTS = 20 000` per
   corner and grows them in-place via `setDrawRange` — no re-allocation per
-  frame.
+  frame. The growing `THREE.Line`/`THREE.Mesh` objects are rendered via
+  `<primitive>` (avoids the `<line>`/SVG JSX name clash) and grown through the
+  `SweptPathHandle` (`append`/`clear`).
+- Prefer declarative JSX; reach for refs + the `useFrame` loop only for
+  per-frame mutation. Keep `frameloop="demand"` working: anything that changes
+  the scene outside the loop must `invalidate()`.
 
 ## Adding features
 
-- **New car parameter:** add to `CarParams` interface in `CarModel.ts`, set a
-  default in `DEFAULT_PARAMS`, add a `SliderRow` in `ParameterPanel.tsx`, and
-  handle it in `SceneManager.updateParams()` / the simulation step.
-- **New overlay:** add a class similar to `SweptPath` that takes the
-  `THREE.Scene` in its constructor and exposes an `update(state, params)`
-  method; call it from `SceneManager`'s render loop.
+- **New car parameter:** add to `CarParams` in `CarModel.ts`, set a default in
+  `DEFAULT_PARAMS`, add a `SliderRow` in `ParameterPanel.tsx`. It flows as a
+  prop into `Scene`/`Car` automatically; use it in the `step()` math and/or
+  `Car` geometry.
+- **New overlay:** add a component similar to `SweptPath` that renders R3F
+  elements and (if it needs per-frame data) exposes an imperative handle the
+  `Scene` loop drives; mount it inside `Scene`.
 - **New toolbar action:** add a button in `Toolbar.tsx`, a handler in `App.tsx`,
-  and a corresponding public method on `SceneManager`.
+  and a method on `SceneHandle` in `Scene.tsx` (remember to `invalidate()`).
