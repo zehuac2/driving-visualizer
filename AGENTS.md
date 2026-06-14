@@ -7,9 +7,10 @@ bun install          # install dependencies
 bun run dev          # Vite dev server at http://localhost:5173 (hot reload)
 bun run build        # production bundle → dist/
 bun run preview      # serve the production build locally
+bun test             # run the unit test suite (Bun's built-in runner)
 ```
 
-No test suite exists yet. Verify behaviour by running the dev server and driving the car in the browser.
+Unit tests cover the pure simulation code in `src/sim` (`*.test.ts`, run with `bun test`). For UI/rendering changes, verify behaviour by running the dev server and driving the car in the browser.
 
 ## Stack
 
