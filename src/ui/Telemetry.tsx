@@ -1,4 +1,4 @@
-import type { TelemetryData } from '@/scene/SceneManager.ts';
+import type { TelemetryData } from '@/scene/Scene.tsx';
 
 interface Props {
   data: TelemetryData;

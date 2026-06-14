@@ -1,51 +1,20 @@
-// Keyboard held-state tracker.
-// Resolves discrete key events into a continuous input frame.
+// Pure key-mapping: resolve a set of held key codes into a continuous input
+// frame. The held-state tracking and window listeners live in the
+// `useKeyboardInput` hook; this function stays pure and testable.
 
 import type { StepInput } from './CarModel.ts';
 
-const held = new Set<string>();
+/** Key codes that should not scroll the page while driving. */
+export const SCROLL_KEYS = [
+  'Space',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+] as const;
 
-function onKeyDown(e: KeyboardEvent): void {
-  // Don't capture when focus is in an input element.
-  if (
-    e.target instanceof HTMLInputElement ||
-    e.target instanceof HTMLTextAreaElement
-  ) {
-    return;
-  }
-  held.add(e.code);
-  // Prevent page scroll from Space / arrow keys.
-  if (
-    ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(
-      e.code,
-    )
-  ) {
-    e.preventDefault();
-  }
-}
-
-function onKeyUp(e: KeyboardEvent): void {
-  held.delete(e.code);
-}
-
-let attached = false;
-
-export function attachInput(): void {
-  if (attached) return;
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
-  attached = true;
-}
-
-export function detachInput(): void {
-  window.removeEventListener('keydown', onKeyDown);
-  window.removeEventListener('keyup', onKeyUp);
-  held.clear();
-  attached = false;
-}
-
-/** Return the current input frame based on held keys. */
-export function readInput(): StepInput {
+/** Map the currently held key codes to a `StepInput` frame. */
+export function mapKeysToInput(held: ReadonlySet<string>): StepInput {
   const forward = held.has('KeyW') || held.has('ArrowUp');
   const reverse = held.has('KeyS') || held.has('ArrowDown');
   const steerLeft = held.has('KeyA') || held.has('ArrowLeft');
