@@ -39,7 +39,10 @@ const style: Record<string, React.CSSProperties> = {
     color: '#e8f0ff',
     fontVariantNumeric: 'tabular-nums',
   },
-  indicator: (driving: boolean): React.CSSProperties => ({
+};
+
+function indicatorStyle(driving: boolean): React.CSSProperties {
+  return {
     display: 'inline-block',
     width: 8,
     height: 8,
@@ -48,8 +51,8 @@ const style: Record<string, React.CSSProperties> = {
     marginRight: 6,
     verticalAlign: 'middle',
     boxShadow: driving ? '0 0 6px #69f0ae' : 'none',
-  }),
-};
+  };
+}
 
 function fmt(n: number, decimals = 2): string {
   return Number.isFinite(n) ? n.toFixed(decimals) : '∞';
@@ -67,7 +70,7 @@ export function Telemetry({ data }: Props): React.ReactElement {
       <div style={style.row}>
         <span style={style.label}>Status</span>
         <span style={style.value}>
-          <span style={style.indicator(driving)} />
+          <span style={indicatorStyle(driving)} />
           {driving ? 'Moving' : 'Stopped'}
         </span>
       </div>
