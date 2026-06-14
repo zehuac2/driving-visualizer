@@ -3,7 +3,7 @@
 // between successive corner quads.
 
 import * as THREE from 'three';
-import type { BodyCorners } from '../sim/CarModel.ts';
+import type { BodyCorners } from '@/sim/CarModel.ts';
 
 const CORNER_COLORS = {
   frontLeft: 0x00e5ff, // cyan

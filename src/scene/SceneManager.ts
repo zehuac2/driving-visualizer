@@ -2,9 +2,9 @@
 // fixed-timestep game loop, pan/zoom, and driving simulation.
 
 import * as THREE from 'three';
-import { step, createInitialState, getCorners } from '../sim/CarModel.ts';
-import type { CarParams, CarState } from '../sim/CarModel.ts';
-import { attachInput, detachInput, readInput } from '../sim/input.ts';
+import { step, createInitialState, getCorners } from '@/sim/CarModel.ts';
+import type { CarParams, CarState } from '@/sim/CarModel.ts';
+import { attachInput, detachInput, readInput } from '@/sim/input.ts';
 import { SweptPath } from './SweptPath.ts';
 
 export interface TelemetryData {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CarParams } from '../sim/CarModel.ts';
+import type { CarParams } from '@/sim/CarModel.ts';
 
 interface Props {
   params: CarParams;
