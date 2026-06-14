@@ -72,6 +72,24 @@ for the full math.
   convention).
 - The car starts facing +Y (heading = π/2).
 
+## Style guide
+
+### Imports
+
+Use the `@/` alias for all imports that cross a directory boundary. `@/` maps to
+`src/`, so `@/sim/CarModel.ts` resolves to `src/sim/CarModel.ts`.
+
+```ts
+// good
+import { step } from '@/sim/CarModel.ts';
+import type { TelemetryData } from '@/scene/SceneManager.ts';
+
+// bad — never use ../
+import { step } from '../sim/CarModel.ts';
+```
+
+Same-directory imports use `./` as normal.
+
 ## React component conventions
 
 - Each component file exports exactly one named component.
