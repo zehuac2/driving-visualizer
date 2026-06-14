@@ -1,11 +1,11 @@
 // Manages the Three.js scene: orthographic top-down camera, car mesh, grid,
 // fixed-timestep game loop, pan/zoom, and driving simulation.
 
-import * as THREE from "three";
-import { step, createInitialState, getCorners } from "../sim/CarModel.ts";
-import type { CarParams, CarState } from "../sim/CarModel.ts";
-import { attachInput, detachInput, readInput } from "../sim/input.ts";
-import { SweptPath } from "./SweptPath.ts";
+import * as THREE from 'three';
+import { step, createInitialState, getCorners } from '../sim/CarModel.ts';
+import type { CarParams, CarState } from '../sim/CarModel.ts';
+import { attachInput, detachInput, readInput } from '../sim/input.ts';
+import { SweptPath } from './SweptPath.ts';
 
 export interface TelemetryData {
   x: number;
@@ -20,7 +20,7 @@ export interface TelemetryData {
 export type TelemetryCallback = (data: TelemetryData) => void;
 
 const WHEEL_W = 0.22; // visual wheel width (meters)
-const WHEEL_L = 0.5;  // visual wheel length (meters)
+const WHEEL_L = 0.5; // visual wheel length (meters)
 
 export class SceneManager {
   private renderer: THREE.WebGLRenderer;
@@ -60,7 +60,7 @@ export class SceneManager {
   constructor(
     canvas: HTMLCanvasElement,
     params: CarParams,
-    onTelemetry: TelemetryCallback
+    onTelemetry: TelemetryCallback,
   ) {
     this.params = params;
     this.carState = createInitialState();
@@ -82,7 +82,7 @@ export class SceneManager {
       this.viewSize,
       -this.viewSize,
       0.1,
-      1000
+      1000,
     );
     this.camera.position.set(0, 0, 100);
     this.camera.lookAt(0, 0, 0);
@@ -95,7 +95,7 @@ export class SceneManager {
     // Origin marker (red dot).
     const originDot = new THREE.Mesh(
       new THREE.CircleGeometry(0.1, 16),
-      new THREE.MeshBasicMaterial({ color: 0xff3333 })
+      new THREE.MeshBasicMaterial({ color: 0xff3333 }),
     );
     originDot.position.z = 0.005;
     this.scene.add(originDot);
@@ -120,7 +120,7 @@ export class SceneManager {
       arrowLen,
       0xffffff,
       arrowLen * 0.4,
-      arrowLen * 0.25
+      arrowLen * 0.25,
     );
     this.carBody.add(this.dirArrow);
 
@@ -135,17 +135,17 @@ export class SceneManager {
 
     // Window resize.
     this.handleResize = this.handleResize.bind(this);
-    window.addEventListener("resize", this.handleResize);
+    window.addEventListener('resize', this.handleResize);
     this.handleResize();
 
     // Pan/zoom events on the canvas.
-    canvas.addEventListener("wheel", this.onWheel.bind(this), {
+    canvas.addEventListener('wheel', this.onWheel.bind(this), {
       passive: false,
     });
-    canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
-    canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
-    canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
-    canvas.addEventListener("mouseleave", this.onMouseUp.bind(this));
+    canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+    canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+    canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+    canvas.addEventListener('mouseleave', this.onMouseUp.bind(this));
 
     // Start loop.
     this.loop = this.loop.bind(this);
@@ -179,7 +179,7 @@ export class SceneManager {
         new THREE.Vector3(bodyWidth / 2, centerOffset + bodyLength / 2, 0.001),
         new THREE.Vector3(-bodyWidth / 2, centerOffset + bodyLength / 2, 0.001),
       ]),
-      new THREE.LineBasicMaterial({ color: 0x90caff })
+      new THREE.LineBasicMaterial({ color: 0x90caff }),
     );
     mesh.add(outline);
 
@@ -203,7 +203,7 @@ export class SceneManager {
           new THREE.Vector3(WHEEL_W / 2, WHEEL_L / 2, 0.001),
           new THREE.Vector3(-WHEEL_W / 2, WHEEL_L / 2, 0.001),
         ]),
-        new THREE.LineBasicMaterial({ color: 0x667788 })
+        new THREE.LineBasicMaterial({ color: 0x667788 }),
       );
       mesh.add(outline);
       return mesh;
@@ -267,7 +267,7 @@ export class SceneManager {
       arrowLen,
       0xffffff,
       arrowLen * 0.4,
-      arrowLen * 0.25
+      arrowLen * 0.25,
     );
     this.carBody.add(this.dirArrow);
 
@@ -277,7 +277,8 @@ export class SceneManager {
   private loop(now: number): void {
     this.animFrame = requestAnimationFrame(this.loop);
 
-    const dt = this.lastTime === null ? 0 : Math.min((now - this.lastTime) / 1000, 0.1);
+    const dt =
+      this.lastTime === null ? 0 : Math.min((now - this.lastTime) / 1000, 0.1);
     this.lastTime = now;
 
     const input = readInput();
@@ -287,8 +288,7 @@ export class SceneManager {
     // Append to swept path only when the car has actually moved.
     const newCorners = getCorners(this.carState, this.params);
     const moved =
-      input.throttle !== 0 ||
-      Math.abs(this.carState.x - this.carState.x) > 0; // always append when moving
+      input.throttle !== 0 || Math.abs(this.carState.x - this.carState.x) > 0; // always append when moving
 
     if (input.throttle !== 0) {
       this.sweptPath.append(newCorners);
@@ -409,7 +409,7 @@ export class SceneManager {
   dispose(): void {
     if (this.animFrame !== null) cancelAnimationFrame(this.animFrame);
     detachInput();
-    window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener('resize', this.handleResize);
     this.sweptPath.dispose();
     this.renderer.dispose();
   }

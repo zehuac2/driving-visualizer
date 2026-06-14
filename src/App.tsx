@@ -1,12 +1,12 @@
-import { useRef, useEffect, useState, useCallback } from "react";
-import { SceneManager } from "./scene/SceneManager.ts";
-import type { TelemetryData } from "./scene/SceneManager.ts";
-import { DEFAULT_PARAMS } from "./sim/CarModel.ts";
-import type { CarParams } from "./sim/CarModel.ts";
-import { Telemetry } from "./ui/Telemetry.tsx";
-import { Toolbar } from "./ui/Toolbar.tsx";
-import { ParameterPanel } from "./ui/ParameterPanel.tsx";
-import { Controls } from "./ui/Controls.tsx";
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { SceneManager } from './scene/SceneManager.ts';
+import type { TelemetryData } from './scene/SceneManager.ts';
+import { DEFAULT_PARAMS } from './sim/CarModel.ts';
+import type { CarParams } from './sim/CarModel.ts';
+import { Telemetry } from './ui/Telemetry.tsx';
+import { Toolbar } from './ui/Toolbar.tsx';
+import { ParameterPanel } from './ui/ParameterPanel.tsx';
+import { Controls } from './ui/Controls.tsx';
 
 const INITIAL_TELEMETRY: TelemetryData = {
   x: 0,
@@ -71,10 +71,10 @@ export function App(): React.ReactElement {
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block" }}
+        style={{ width: '100%', height: '100%', display: 'block' }}
       />
       <Telemetry data={telemetry} />
       <Toolbar

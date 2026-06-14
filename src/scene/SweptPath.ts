@@ -2,14 +2,14 @@
 // Four growing polylines (one per corner) plus an optional translucent fill
 // between successive corner quads.
 
-import * as THREE from "three";
-import type { BodyCorners } from "../sim/CarModel.ts";
+import * as THREE from 'three';
+import type { BodyCorners } from '../sim/CarModel.ts';
 
 const CORNER_COLORS = {
-  frontLeft: 0x00e5ff,  // cyan
+  frontLeft: 0x00e5ff, // cyan
   frontRight: 0xff4081, // pink
-  rearLeft: 0x69f0ae,   // green
-  rearRight: 0xffd740,  // amber
+  rearLeft: 0x69f0ae, // green
+  rearRight: 0xffd740, // amber
 };
 
 const MAX_POINTS = 20_000; // per corner trail
@@ -18,12 +18,15 @@ export class SweptPath {
   private group: THREE.Group;
 
   // Per-corner line geometry.
-  private lines: Record<keyof BodyCorners, {
-    geo: THREE.BufferGeometry;
-    positions: Float32Array;
-    count: number;
-    line: THREE.Line;
-  }>;
+  private lines: Record<
+    keyof BodyCorners,
+    {
+      geo: THREE.BufferGeometry;
+      positions: Float32Array;
+      count: number;
+      line: THREE.Line;
+    }
+  >;
 
   // Filled envelope mesh (triangle strip joining successive corner quads).
   private fillGeo: THREE.BufferGeometry;
@@ -39,13 +42,18 @@ export class SweptPath {
     scene.add(this.group);
 
     // Build per-corner trailing lines.
-    const corners = ["frontLeft", "frontRight", "rearLeft", "rearRight"] as const;
+    const corners = [
+      'frontLeft',
+      'frontRight',
+      'rearLeft',
+      'rearRight',
+    ] as const;
     this.lines = {} as typeof this.lines;
 
     for (const key of corners) {
       const positions = new Float32Array(MAX_POINTS * 3);
       const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geo.setDrawRange(0, 0);
 
       const mat = new THREE.LineBasicMaterial({
@@ -66,8 +74,8 @@ export class SweptPath {
     this.fillPositions = new Float32Array(MAX_POINTS * 4 * 3);
     this.fillGeo = new THREE.BufferGeometry();
     this.fillGeo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(this.fillPositions, 3)
+      'position',
+      new THREE.BufferAttribute(this.fillPositions, 3),
     );
 
     // Pre-build index buffer for triangle strips between rows.
@@ -78,9 +86,7 @@ export class SweptPath {
     // We'll index lazily via dynamic index buffer instead.
     this.fillIndices = new Uint32Array((MAX_POINTS - 1) * 12); // 4 tris * 3 verts per row-pair edge pair
 
-    this.fillGeo.setIndex(
-      new THREE.BufferAttribute(this.fillIndices, 1)
-    );
+    this.fillGeo.setIndex(new THREE.BufferAttribute(this.fillIndices, 1));
     this.fillGeo.setDrawRange(0, 0);
 
     const fillMat = new THREE.MeshBasicMaterial({
@@ -98,10 +104,10 @@ export class SweptPath {
   /** Append a new set of corner positions (call each frame the car moves). */
   append(corners: BodyCorners): void {
     const cornerKeys: (keyof BodyCorners)[] = [
-      "frontLeft",
-      "frontRight",
-      "rearLeft",
-      "rearRight",
+      'frontLeft',
+      'frontRight',
+      'rearLeft',
+      'rearRight',
     ];
     const Z = 0.01; // slightly above grid
 
@@ -115,7 +121,7 @@ export class SweptPath {
       d.positions[base + 1] = wy;
       d.positions[base + 2] = Z;
       d.count++;
-      d.geo.attributes["position"]!.needsUpdate = true;
+      d.geo.attributes['position']!.needsUpdate = true;
       d.geo.setDrawRange(0, d.count);
     }
 
@@ -130,7 +136,7 @@ export class SweptPath {
         this.fillPositions[base + i * 3 + 1] = wy;
         this.fillPositions[base + i * 3 + 2] = Z;
       }
-      this.fillGeo.attributes["position"]!.needsUpdate = true;
+      this.fillGeo.attributes['position']!.needsUpdate = true;
       this.fillCount++;
 
       // Build index for the new row pair (need at least 2 rows).
@@ -155,8 +161,8 @@ export class SweptPath {
     let idxCursor = 0;
 
     for (let i = 0; i < n; i++) {
-      const a = i * 4;        // row i:   FL=a+0, FR=a+1, RL=a+2, RR=a+3
-      const b = (i + 1) * 4;  // row i+1: FL=b+0, FR=b+1, RL=b+2, RR=b+3
+      const a = i * 4; // row i:   FL=a+0, FR=a+1, RL=a+2, RR=a+3
+      const b = (i + 1) * 4; // row i+1: FL=b+0, FR=b+1, RL=b+2, RR=b+3
 
       // Fill the full quadrilateral between the two rows as one convex polygon.
       // The 4 outline corners are: FL(i), FR(i), RR(i), RL(i) (row i box)
@@ -164,13 +170,13 @@ export class SweptPath {
       // We use a simple 6-triangle fan covering the difference strip + interiors.
 
       // Side strip FL→FR (front edge between rows)
-      this.fillIndices[idxCursor++] = a;     // FL(i)
+      this.fillIndices[idxCursor++] = a; // FL(i)
       this.fillIndices[idxCursor++] = a + 1; // FR(i)
-      this.fillIndices[idxCursor++] = b;     // FL(i+1)
+      this.fillIndices[idxCursor++] = b; // FL(i+1)
 
       this.fillIndices[idxCursor++] = a + 1; // FR(i)
       this.fillIndices[idxCursor++] = b + 1; // FR(i+1)
-      this.fillIndices[idxCursor++] = b;     // FL(i+1)
+      this.fillIndices[idxCursor++] = b; // FL(i+1)
 
       // Side strip FR→RR (right edge)
       this.fillIndices[idxCursor++] = a + 1; // FR(i)
@@ -183,11 +189,11 @@ export class SweptPath {
 
       // Side strip RL→FL (left edge)
       this.fillIndices[idxCursor++] = a + 2; // RL(i)
-      this.fillIndices[idxCursor++] = a;     // FL(i)
+      this.fillIndices[idxCursor++] = a; // FL(i)
       this.fillIndices[idxCursor++] = b + 2; // RL(i+1)
 
-      this.fillIndices[idxCursor++] = a;     // FL(i)
-      this.fillIndices[idxCursor++] = b;     // FL(i+1)
+      this.fillIndices[idxCursor++] = a; // FL(i)
+      this.fillIndices[idxCursor++] = b; // FL(i+1)
       this.fillIndices[idxCursor++] = b + 2; // RL(i+1)
 
       // Side strip RR→RL (rear edge)
@@ -215,7 +221,12 @@ export class SweptPath {
   }
 
   clear(): void {
-    const corners = ["frontLeft", "frontRight", "rearLeft", "rearRight"] as const;
+    const corners = [
+      'frontLeft',
+      'frontRight',
+      'rearLeft',
+      'rearRight',
+    ] as const;
     for (const key of corners) {
       this.lines[key]!.count = 0;
       this.lines[key]!.geo.setDrawRange(0, 0);
@@ -226,7 +237,12 @@ export class SweptPath {
 
   dispose(): void {
     this.group.parent?.remove(this.group);
-    const corners = ["frontLeft", "frontRight", "rearLeft", "rearRight"] as const;
+    const corners = [
+      'frontLeft',
+      'frontRight',
+      'rearLeft',
+      'rearRight',
+    ] as const;
     for (const key of corners) {
       this.lines[key]!.geo.dispose();
     }

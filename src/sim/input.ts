@@ -1,7 +1,7 @@
 // Keyboard held-state tracker.
 // Resolves discrete key events into a continuous input frame.
 
-import type { StepInput } from "./CarModel.ts";
+import type { StepInput } from './CarModel.ts';
 
 const held = new Set<string>();
 
@@ -16,8 +16,8 @@ function onKeyDown(e: KeyboardEvent): void {
   held.add(e.code);
   // Prevent page scroll from Space / arrow keys.
   if (
-    ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
-      e.code
+    ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(
+      e.code,
     )
   ) {
     e.preventDefault();
@@ -32,26 +32,26 @@ let attached = false;
 
 export function attachInput(): void {
   if (attached) return;
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
   attached = true;
 }
 
 export function detachInput(): void {
-  window.removeEventListener("keydown", onKeyDown);
-  window.removeEventListener("keyup", onKeyUp);
+  window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('keyup', onKeyUp);
   held.clear();
   attached = false;
 }
 
 /** Return the current input frame based on held keys. */
 export function readInput(): StepInput {
-  const forward = held.has("KeyW") || held.has("ArrowUp");
-  const reverse = held.has("KeyS") || held.has("ArrowDown");
-  const steerLeft = held.has("KeyA") || held.has("ArrowLeft");
-  const steerRight = held.has("KeyD") || held.has("ArrowRight");
-  const centerSteering = held.has("KeyC");
-  const holdSteering = held.has("Space");
+  const forward = held.has('KeyW') || held.has('ArrowUp');
+  const reverse = held.has('KeyS') || held.has('ArrowDown');
+  const steerLeft = held.has('KeyA') || held.has('ArrowLeft');
+  const steerRight = held.has('KeyD') || held.has('ArrowRight');
+  const centerSteering = held.has('KeyC');
+  const holdSteering = held.has('Space');
 
   let throttle = 0;
   if (forward && !reverse) throttle = 1;

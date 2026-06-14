@@ -62,7 +62,7 @@ export function step(
   state: CarState,
   params: CarParams,
   input: StepInput,
-  dt: number
+  dt: number,
 ): CarState {
   const SUB_DT = 1 / 240;
   let { x, y, heading, steeringAngle } = state;
@@ -85,7 +85,7 @@ export function step(
         steeringAngle += input.steerDir * params.steeringRate * subDt;
         steeringAngle = Math.max(
           -params.maxSteeringAngle,
-          Math.min(params.maxSteeringAngle, steeringAngle)
+          Math.min(params.maxSteeringAngle, steeringAngle),
         );
       } else if (!input.holdSteering) {
         // No steer input and not held: self-center toward 0° at steeringRate.
@@ -104,8 +104,7 @@ export function step(
     const s = input.throttle * params.speed;
 
     // Heading rate: dθ/dt = (s / L) * tan(δ).
-    const dTheta =
-      (s / params.wheelbase) * Math.tan(steeringAngle) * subDt;
+    const dTheta = (s / params.wheelbase) * Math.tan(steeringAngle) * subDt;
     heading += dTheta;
 
     // Move the rear axle.
@@ -157,7 +156,10 @@ export function getCorners(state: CarState, params: CarParams): BodyCorners {
 /**
  * Turning radius at the rear axle (Infinity when going straight).
  */
-export function turningRadius(params: CarParams, steeringAngle: number): number {
+export function turningRadius(
+  params: CarParams,
+  steeringAngle: number,
+): number {
   if (Math.abs(steeringAngle) < 1e-6) return Infinity;
   return params.wheelbase / Math.tan(steeringAngle);
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { CarParams } from "../sim/CarModel.ts";
+import { useState } from 'react';
+import type { CarParams } from '../sim/CarModel.ts';
 
 interface Props {
   params: CarParams;
@@ -7,64 +7,64 @@ interface Props {
 }
 
 const panelStyle: React.CSSProperties = {
-  position: "absolute",
+  position: 'absolute',
   bottom: 12,
-  left: "50%",
-  transform: "translateX(-50%)",
-  background: "rgba(10, 10, 30, 0.88)",
-  border: "1px solid rgba(90, 120, 200, 0.4)",
+  left: '50%',
+  transform: 'translateX(-50%)',
+  background: 'rgba(10, 10, 30, 0.88)',
+  border: '1px solid rgba(90, 120, 200, 0.4)',
   borderRadius: 10,
-  padding: "12px 18px",
-  backdropFilter: "blur(8px)",
-  userSelect: "none",
-  display: "flex",
-  flexDirection: "column",
+  padding: '12px 18px',
+  backdropFilter: 'blur(8px)',
+  userSelect: 'none',
+  display: 'flex',
+  flexDirection: 'column',
   gap: 6,
   minWidth: 560,
 };
 
 const rowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
+  display: 'flex',
+  alignItems: 'center',
   gap: 10,
   fontSize: 11,
-  color: "#c8d8ff",
+  color: '#c8d8ff',
 };
 
 const labelStyle: React.CSSProperties = {
   width: 150,
-  color: "#7a98e8",
-  textAlign: "right",
+  color: '#7a98e8',
+  textAlign: 'right',
   flexShrink: 0,
 };
 
 const valueStyle: React.CSSProperties = {
   width: 52,
-  textAlign: "right",
-  color: "#e8f0ff",
-  fontVariantNumeric: "tabular-nums",
+  textAlign: 'right',
+  color: '#e8f0ff',
+  fontVariantNumeric: 'tabular-nums',
   flexShrink: 0,
 };
 
 const unitStyle: React.CSSProperties = {
   width: 30,
-  color: "#5a78c8",
+  color: '#5a78c8',
   flexShrink: 0,
 };
 
 const sliderStyle: React.CSSProperties = {
   flexGrow: 1,
-  accentColor: "#3a86ff",
-  cursor: "pointer",
+  accentColor: '#3a86ff',
+  cursor: 'pointer',
 };
 
 const titleStyle: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: 2,
-  color: "#5a78c8",
+  color: '#5a78c8',
   marginBottom: 4,
-  textTransform: "uppercase",
-  textAlign: "center",
+  textTransform: 'uppercase',
+  textAlign: 'center',
 };
 
 interface SliderRowProps {
@@ -106,7 +106,10 @@ function SliderRow({
   );
 }
 
-export function ParameterPanel({ params, onChange }: Props): React.ReactElement {
+export function ParameterPanel({
+  params,
+  onChange,
+}: Props): React.ReactElement {
   const [open, setOpen] = useState(true);
 
   function set<K extends keyof CarParams>(key: K, val: CarParams[K]): void {
@@ -119,10 +122,10 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
   return (
     <div style={panelStyle}>
       <div
-        style={{ ...titleStyle, cursor: "pointer" }}
+        style={{ ...titleStyle, cursor: 'pointer' }}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? "▾" : "▸"} Car Parameters
+        {open ? '▾' : '▸'} Car Parameters
       </div>
       {open && (
         <>
@@ -133,7 +136,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             max={6.0}
             step={0.05}
             unit="m"
-            onChange={(v) => set("wheelbase", v)}
+            onChange={(v) => set('wheelbase', v)}
           />
           <SliderRow
             label="Front Overhang"
@@ -142,7 +145,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             max={2.0}
             step={0.05}
             unit="m"
-            onChange={(v) => set("frontOverhang", v)}
+            onChange={(v) => set('frontOverhang', v)}
           />
           <SliderRow
             label="Rear Overhang"
@@ -151,7 +154,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             max={2.0}
             step={0.05}
             unit="m"
-            onChange={(v) => set("rearOverhang", v)}
+            onChange={(v) => set('rearOverhang', v)}
           />
           <SliderRow
             label="Body Width"
@@ -160,7 +163,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             max={3.0}
             step={0.05}
             unit="m"
-            onChange={(v) => set("bodyWidth", v)}
+            onChange={(v) => set('bodyWidth', v)}
           />
           <SliderRow
             label="Max Steering Angle"
@@ -170,7 +173,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             step={1}
             unit="°"
             decimals={0}
-            onChange={(v) => set("maxSteeringAngle", (v * Math.PI) / 180)}
+            onChange={(v) => set('maxSteeringAngle', (v * Math.PI) / 180)}
           />
           <SliderRow
             label="Steering Rate"
@@ -180,7 +183,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             step={5}
             unit="°/s"
             decimals={0}
-            onChange={(v) => set("steeringRate", (v * Math.PI) / 180)}
+            onChange={(v) => set('steeringRate', (v * Math.PI) / 180)}
           />
           <SliderRow
             label="Speed"
@@ -189,7 +192,7 @@ export function ParameterPanel({ params, onChange }: Props): React.ReactElement 
             max={20}
             step={0.5}
             unit="m/s"
-            onChange={(v) => set("speed", v)}
+            onChange={(v) => set('speed', v)}
           />
         </>
       )}
