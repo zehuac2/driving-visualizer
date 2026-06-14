@@ -4,7 +4,7 @@
 // the loop calls invalidate() only while the car or its steering is still
 // changing, so the canvas goes idle when nothing moves.
 
-import { useImperativeHandle, useMemo, useRef, type Ref } from 'react';
+import { memo, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrthographicCamera, MapControls } from '@react-three/drei';
@@ -48,7 +48,9 @@ const INITIAL_HALF_HEIGHT = 30; // visible half-height in meters at default zoom
 const TELEMETRY_INTERVAL_MS = 66; // ~15 Hz panel updates
 const STEERING_EPS = 1e-4;
 
-export function Scene({
+// Memoized so the ~15 Hz telemetry-driven App re-render doesn't reconcile the
+// whole R3F subtree; Scene's props are referentially stable across those ticks.
+export const Scene = memo(function Scene({
   params,
   fillVisible,
   onTelemetry,
@@ -199,4 +201,4 @@ export function Scene({
       />
     </>
   );
-}
+});

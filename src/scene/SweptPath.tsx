@@ -67,9 +67,9 @@ function createBuffers(): Buffers {
   }
 
   // Fill mesh: each row has 4 vertices (one per corner); successive rows form
-  // 4 edge strips of 2 triangles each → 12 indices per row pair.
+  // 4 edge strips of 2 triangles each → 24 indices per row pair.
   const fillPositions = new Float32Array(MAX_POINTS * 4 * 3);
-  const fillIndices = new Uint32Array((MAX_POINTS - 1) * 12);
+  const fillIndices = new Uint32Array((MAX_POINTS - 1) * 24);
   const fillGeo = new THREE.BufferGeometry();
   fillGeo.setAttribute('position', new THREE.BufferAttribute(fillPositions, 3));
   fillGeo.setIndex(new THREE.BufferAttribute(fillIndices, 1));
@@ -89,50 +89,56 @@ function createBuffers(): Buffers {
   return { lines, fillGeo, fillPositions, fillIndices, fillMesh, fillCount: 0 };
 }
 
-/** Triangulate the four edge strips between every successive pair of rows. */
-function rebuildFillIndices(b: Buffers): void {
+const INDICES_PER_ROW_PAIR = 24; // 4 edge strips × 2 triangles × 3 verts
+
+/**
+ * Triangulate the four edge strips for the single newest row pair (the rows
+ * `b.fillCount - 2` and `b.fillCount - 1`) and grow the draw range. Only the 24
+ * new indices are written/uploaded — O(1) per frame, not a full rebuild.
+ */
+function appendFillIndices(b: Buffers): void {
   // Vertices per row: 0=FL, 1=FR, 2=RL, 3=RR.
-  const n = b.fillCount - 1; // number of row pairs
-  let idx = 0;
+  const pair = b.fillCount - 2; // index of the new row pair
+  const a = pair * 4; // row `pair`
+  const c = (pair + 1) * 4; // row `pair + 1`
+  let idx = pair * INDICES_PER_ROW_PAIR;
+  const start = idx;
 
-  for (let i = 0; i < n; i++) {
-    const a = i * 4; // row i
-    const c = (i + 1) * 4; // row i+1
+  // Front edge FL→FR.
+  b.fillIndices[idx++] = a;
+  b.fillIndices[idx++] = a + 1;
+  b.fillIndices[idx++] = c;
+  b.fillIndices[idx++] = a + 1;
+  b.fillIndices[idx++] = c + 1;
+  b.fillIndices[idx++] = c;
 
-    // Front edge FL→FR.
-    b.fillIndices[idx++] = a;
-    b.fillIndices[idx++] = a + 1;
-    b.fillIndices[idx++] = c;
-    b.fillIndices[idx++] = a + 1;
-    b.fillIndices[idx++] = c + 1;
-    b.fillIndices[idx++] = c;
+  // Right edge FR→RR.
+  b.fillIndices[idx++] = a + 1;
+  b.fillIndices[idx++] = a + 3;
+  b.fillIndices[idx++] = c + 1;
+  b.fillIndices[idx++] = a + 3;
+  b.fillIndices[idx++] = c + 3;
+  b.fillIndices[idx++] = c + 1;
 
-    // Right edge FR→RR.
-    b.fillIndices[idx++] = a + 1;
-    b.fillIndices[idx++] = a + 3;
-    b.fillIndices[idx++] = c + 1;
-    b.fillIndices[idx++] = a + 3;
-    b.fillIndices[idx++] = c + 3;
-    b.fillIndices[idx++] = c + 1;
+  // Left edge RL→FL.
+  b.fillIndices[idx++] = a + 2;
+  b.fillIndices[idx++] = a;
+  b.fillIndices[idx++] = c + 2;
+  b.fillIndices[idx++] = a;
+  b.fillIndices[idx++] = c;
+  b.fillIndices[idx++] = c + 2;
 
-    // Left edge RL→FL.
-    b.fillIndices[idx++] = a + 2;
-    b.fillIndices[idx++] = a;
-    b.fillIndices[idx++] = c + 2;
-    b.fillIndices[idx++] = a;
-    b.fillIndices[idx++] = c;
-    b.fillIndices[idx++] = c + 2;
+  // Rear edge RR→RL.
+  b.fillIndices[idx++] = a + 3;
+  b.fillIndices[idx++] = a + 2;
+  b.fillIndices[idx++] = c + 3;
+  b.fillIndices[idx++] = a + 2;
+  b.fillIndices[idx++] = c + 2;
+  b.fillIndices[idx++] = c + 3;
 
-    // Rear edge RR→RL.
-    b.fillIndices[idx++] = a + 3;
-    b.fillIndices[idx++] = a + 2;
-    b.fillIndices[idx++] = c + 3;
-    b.fillIndices[idx++] = a + 2;
-    b.fillIndices[idx++] = c + 2;
-    b.fillIndices[idx++] = c + 3;
-  }
-
-  b.fillGeo.index!.needsUpdate = true;
+  const index = b.fillGeo.index!;
+  index.addUpdateRange(start, INDICES_PER_ROW_PAIR);
+  index.needsUpdate = true;
   b.fillGeo.setDrawRange(0, idx);
 }
 
@@ -146,7 +152,10 @@ function append(b: Buffers, corners: BodyCorners): void {
     d.positions[base + 1] = wy;
     d.positions[base + 2] = Z;
     d.count++;
-    d.geo.attributes['position']!.needsUpdate = true;
+    // Upload only the 3 floats just written, not the whole 20k-point buffer.
+    const attr = d.geo.attributes['position'] as THREE.BufferAttribute;
+    attr.addUpdateRange(base, 3);
+    attr.needsUpdate = true;
     d.geo.setDrawRange(0, d.count);
   }
 
@@ -158,9 +167,12 @@ function append(b: Buffers, corners: BodyCorners): void {
       b.fillPositions[base + i * 3 + 1] = wy;
       b.fillPositions[base + i * 3 + 2] = Z;
     }
-    b.fillGeo.attributes['position']!.needsUpdate = true;
+    // Upload only the 12 floats (4 corners) just written.
+    const attr = b.fillGeo.attributes['position'] as THREE.BufferAttribute;
+    attr.addUpdateRange(base, 12);
+    attr.needsUpdate = true;
     b.fillCount++;
-    if (b.fillCount >= 2) rebuildFillIndices(b);
+    if (b.fillCount >= 2) appendFillIndices(b);
   }
 }
 
