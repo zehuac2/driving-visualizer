@@ -21,7 +21,12 @@ The car is represented by four scalar values:
 Each animation frame the integrator runs in sub-steps of 1/240 s (to keep the Euler step accurate on sharp turns). Per sub-step:
 
 ```
+# Active steering (A/D held):
 δ  +=  steerDir × steeringRate × dt          (clamped to ±maxSteeringAngle)
+# No steer input, Space not held — self-center toward 0°:
+δ  →  0  at rate steeringRate × dt           (clamps at 0, no overshoot)
+# No steer input, Space held — hold angle:
+δ  unchanged
 
 dθ  =  (s / L) × tan(δ) × dt
 θ  +=  dθ
@@ -66,11 +71,12 @@ Each frame's four corner positions are appended to four growing polylines (one p
 
 | Input | Action |
 |---|---|
-| `Space` / `W` / `↑` | Drive forward (stops immediately on release) |
+| `W` / `↑` | Drive forward (stops immediately on release) |
 | `S` / `↓` | Reverse |
-| `A` / `←` | Steer left — angle **holds** when released |
-| `D` / `→` | Steer right |
-| `C` | Center steering to 0° |
+| `A` / `←` | Steer left — self-centers on release |
+| `D` / `→` | Steer right — self-centers on release |
+| `Space` | Hold steering angle (prevents self-centering while held) |
+| `C` | Center steering to 0° instantly |
 | Scroll | Zoom |
 | Drag | Pan |
 

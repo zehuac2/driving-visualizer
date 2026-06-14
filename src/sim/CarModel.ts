@@ -50,6 +50,8 @@ export interface StepInput {
   steerDir: number;
   /** If true, snap steering to 0. */
   centerSteering: boolean;
+  /** If true, freeze the steering angle instead of self-centering. */
+  holdSteering: boolean;
 }
 
 /**
@@ -77,12 +79,23 @@ export function step(
     remaining -= subDt;
 
     // Update steering angle (clamp to ±maxSteeringAngle).
-    if (!input.centerSteering && input.steerDir !== 0) {
-      steeringAngle += input.steerDir * params.steeringRate * subDt;
-      steeringAngle = Math.max(
-        -params.maxSteeringAngle,
-        Math.min(params.maxSteeringAngle, steeringAngle)
-      );
+    if (!input.centerSteering) {
+      if (input.steerDir !== 0) {
+        // Active steering: accumulate in the requested direction.
+        steeringAngle += input.steerDir * params.steeringRate * subDt;
+        steeringAngle = Math.max(
+          -params.maxSteeringAngle,
+          Math.min(params.maxSteeringAngle, steeringAngle)
+        );
+      } else if (!input.holdSteering) {
+        // No steer input and not held: self-center toward 0° at steeringRate.
+        const dec = params.steeringRate * subDt;
+        steeringAngle =
+          steeringAngle > 0
+            ? Math.max(0, steeringAngle - dec)
+            : Math.min(0, steeringAngle + dec);
+      }
+      // holdSteering with steerDir === 0: leave steeringAngle unchanged.
     }
 
     if (input.throttle === 0) continue;

@@ -10,8 +10,8 @@ import {
   type StepInput,
 } from "./CarModel.ts";
 
-// A convenient base input: no motion, no steering, no centering.
-const IDLE: StepInput = { throttle: 0, steerDir: 0, centerSteering: false };
+// A convenient base input: no motion, no steering, no centering, no hold.
+const IDLE: StepInput = { throttle: 0, steerDir: 0, centerSteering: false, holdSteering: false };
 
 function makeState(over: Partial<CarState> = {}): CarState {
   return { x: 0, y: 0, heading: 0, steeringAngle: 0, ...over };
@@ -93,8 +93,25 @@ describe("step — steering", () => {
     expect(s.steeringAngle).toBeCloseTo(-DEFAULT_PARAMS.maxSteeringAngle, 10);
   });
 
-  it("holds the steering angle when steerDir is 0", () => {
-    const s = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, IDLE, 1);
+  it("self-centers toward 0 at steeringRate when steerDir is 0 and not held", () => {
+    const dt = 0.1;
+    const s = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, IDLE, dt);
+    expect(s.steeringAngle).toBeCloseTo(0.3 - DEFAULT_PARAMS.steeringRate * dt, 6);
+  });
+
+  it("self-centering clamps at 0 without overshooting", () => {
+    // Long dt: should decay all the way to 0 and stop there.
+    const s = step(makeState({ steeringAngle: 0.1 }), DEFAULT_PARAMS, IDLE, 10);
+    expect(s.steeringAngle).toBe(0);
+  });
+
+  it("self-centers from a negative angle without overshooting", () => {
+    const s = step(makeState({ steeringAngle: -0.1 }), DEFAULT_PARAMS, IDLE, 10);
+    expect(s.steeringAngle).toBe(0);
+  });
+
+  it("holds the steering angle when holdSteering is true", () => {
+    const s = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...IDLE, holdSteering: true }, 1);
     expect(s.steeringAngle).toBe(0.3);
   });
 
@@ -107,25 +124,29 @@ describe("step — steering", () => {
     const s = step(
       makeState({ steeringAngle: 0.4 }),
       DEFAULT_PARAMS,
-      { throttle: 0, steerDir: 1, centerSteering: true },
+      { throttle: 0, steerDir: 1, centerSteering: true, holdSteering: false },
       1
     );
     expect(s.steeringAngle).toBe(0);
   });
 });
 
+// Turning tests lock the steering angle with holdSteering: true so geometry
+// is tested independently of the self-centering behaviour.
+const HOLD_STEER = { ...IDLE, holdSteering: true };
+
 describe("step — turning", () => {
   it("changes heading by (speed / wheelbase) * tan(δ) * dt", () => {
     // Heading change is independent of position integration, so it is exact.
     const delta = 0.3;
     const dt = 2;
-    const s = step(makeState({ steeringAngle: delta }), DEFAULT_PARAMS, { ...IDLE, throttle: 1 }, dt);
+    const s = step(makeState({ steeringAngle: delta }), DEFAULT_PARAMS, { ...HOLD_STEER, throttle: 1 }, dt);
     const expected = (DEFAULT_PARAMS.speed / DEFAULT_PARAMS.wheelbase) * Math.tan(delta) * dt;
     expect(s.heading).toBeCloseTo(expected, 10);
   });
 
   it("a positive steering angle turns left (heading increases)", () => {
-    const s = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...IDLE, throttle: 1 }, 1);
+    const s = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...HOLD_STEER, throttle: 1 }, 1);
     expect(s.heading).toBeGreaterThan(0);
   });
 
@@ -136,14 +157,14 @@ describe("step — turning", () => {
     // Starting at origin heading +X, that center is (0, R). The forward-Euler
     // integrator drifts slightly off the ideal circle, hence the loose tolerance.
     const center = { x: 0, y: R };
-    const s = step(makeState({ steeringAngle: delta }), DEFAULT_PARAMS, { ...IDLE, throttle: 1 }, 2);
+    const s = step(makeState({ steeringAngle: delta }), DEFAULT_PARAMS, { ...HOLD_STEER, throttle: 1 }, 2);
     const dist = Math.hypot(s.x - center.x, s.y - center.y);
     expect(dist).toBeCloseTo(R, 1);
   });
 
   it("reversing with steering turns the opposite way", () => {
-    const fwd = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...IDLE, throttle: 1 }, 1);
-    const rev = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...IDLE, throttle: -1 }, 1);
+    const fwd = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...HOLD_STEER, throttle: 1 }, 1);
+    const rev = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, { ...HOLD_STEER, throttle: -1 }, 1);
     expect(fwd.heading).toBeGreaterThan(0);
     expect(rev.heading).toBeLessThan(0);
   });
@@ -152,7 +173,7 @@ describe("step — turning", () => {
     // One big step vs. many small steps over the same total time. Heading is
     // integrated exactly, so it matches tightly; position is forward-Euler and
     // differs slightly because the fixed 1/240 s sub-step is chunked differently.
-    const input: StepInput = { ...IDLE, throttle: 1 };
+    const input: StepInput = { ...HOLD_STEER, throttle: 1 };
     const big = step(makeState({ steeringAngle: 0.3 }), DEFAULT_PARAMS, input, 1);
 
     let s = makeState({ steeringAngle: 0.3 });

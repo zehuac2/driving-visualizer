@@ -36,11 +36,11 @@ function K({ children }: { children: React.ReactNode }): React.ReactElement {
 export function Controls(): React.ReactElement {
   return (
     <div style={style}>
-      <K>Space</K><K>W</K><K>↑</K> Forward
-      <br />
-      <K>S</K><K>↓</K> Reverse
+      <K>W</K><K>↑</K> Forward &nbsp; <K>S</K><K>↓</K> Reverse
       <br />
       <K>A</K><K>←</K> Steer Left &nbsp; <K>D</K><K>→</K> Right
+      <br />
+      (releases auto-center) &nbsp; <K>Space</K> Hold
       <br />
       <K>C</K> Center Steering
       <br />

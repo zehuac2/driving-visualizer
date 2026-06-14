@@ -46,16 +46,23 @@ describe("readInput", () => {
   });
 
   it("reports a neutral frame when nothing is held", () => {
-    expect(readInput()).toEqual({ throttle: 0, steerDir: 0, centerSteering: false });
+    expect(readInput()).toEqual({ throttle: 0, steerDir: 0, centerSteering: false, holdSteering: false });
   });
 
-  it("maps W / Space / ArrowUp to forward throttle", () => {
-    for (const code of ["KeyW", "Space", "ArrowUp"]) {
+  it("maps W / ArrowUp to forward throttle", () => {
+    for (const code of ["KeyW", "ArrowUp"]) {
       detachInput();
       attachInput();
       keydown(code);
       expect(readInput().throttle).toBe(1);
     }
+  });
+
+  it("maps Space to holdSteering (not throttle)", () => {
+    keydown("Space");
+    const input = readInput();
+    expect(input.holdSteering).toBe(true);
+    expect(input.throttle).toBe(0);
   });
 
   it("maps S / ArrowDown to reverse throttle", () => {
@@ -112,7 +119,7 @@ describe("readInput", () => {
   it("combines throttle and steering simultaneously", () => {
     keydown("KeyW");
     keydown("KeyD");
-    expect(readInput()).toEqual({ throttle: 1, steerDir: -1, centerSteering: false });
+    expect(readInput()).toEqual({ throttle: 1, steerDir: -1, centerSteering: false, holdSteering: false });
   });
 });
 

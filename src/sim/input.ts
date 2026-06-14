@@ -46,12 +46,12 @@ export function detachInput(): void {
 
 /** Return the current input frame based on held keys. */
 export function readInput(): StepInput {
-  const forward =
-    held.has("Space") || held.has("KeyW") || held.has("ArrowUp");
+  const forward = held.has("KeyW") || held.has("ArrowUp");
   const reverse = held.has("KeyS") || held.has("ArrowDown");
   const steerLeft = held.has("KeyA") || held.has("ArrowLeft");
   const steerRight = held.has("KeyD") || held.has("ArrowRight");
   const centerSteering = held.has("KeyC");
+  const holdSteering = held.has("Space");
 
   let throttle = 0;
   if (forward && !reverse) throttle = 1;
@@ -61,5 +61,5 @@ export function readInput(): StepInput {
   if (steerLeft && !steerRight) steerDir = 1;
   else if (steerRight && !steerLeft) steerDir = -1;
 
-  return { throttle, steerDir, centerSteering };
+  return { throttle, steerDir, centerSteering, holdSteering };
 }
