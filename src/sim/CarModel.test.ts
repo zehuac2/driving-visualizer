@@ -10,7 +10,8 @@ import {
   type StepInput,
 } from './CarModel.ts';
 
-// A convenient base input: no motion, no steering, no centering, no hold.
+// A convenient base input. It has no motion, no steering, no centering, and
+// no hold.
 const IDLE: StepInput = {
   throttle: 0,
   steerDir: 0,
@@ -59,7 +60,7 @@ describe('step — straight-line motion', () => {
   });
 
   it('travels in the direction it faces', () => {
-    // Facing +Y, forward motion should increase y, not x.
+    // The car faces +Y. Forward motion should increase y, not x.
     const s = step(
       makeState({ heading: Math.PI / 2 }),
       DEFAULT_PARAMS,
@@ -103,7 +104,7 @@ describe('step — straight-line motion', () => {
 
 describe('step — steering', () => {
   it('accumulates steering at steeringRate while held', () => {
-    // 0.5 s at 60°/s = 30° = below the 35° max.
+    // 0.5 s at 60°/s gives 30°. This is below the 35° max.
     const s = step(makeState(), DEFAULT_PARAMS, { ...IDLE, steerDir: 1 }, 0.5);
     expect(s.steeringAngle).toBeCloseTo(DEFAULT_PARAMS.steeringRate * 0.5, 6);
   });
@@ -133,7 +134,7 @@ describe('step — steering', () => {
   });
 
   it('self-centering clamps at 0 without overshooting', () => {
-    // Long dt: should decay all the way to 0 and stop there.
+    // With a long dt, the angle should decay all the way to 0 and stop there.
     const s = step(makeState({ steeringAngle: 0.1 }), DEFAULT_PARAMS, IDLE, 10);
     expect(s.steeringAngle).toBe(0);
   });
@@ -179,13 +180,13 @@ describe('step — steering', () => {
   });
 });
 
-// Turning tests lock the steering angle with holdSteering: true so geometry
-// is tested independently of the self-centering behaviour.
+// Turning tests lock the steering angle with holdSteering: true. This tests
+// the geometry independently of the self-centering behavior.
 const HOLD_STEER = { ...IDLE, holdSteering: true };
 
 describe('step — turning', () => {
   it('changes heading by (speed / wheelbase) * tan(δ) * dt', () => {
-    // Heading change is independent of position integration, so it is exact.
+    // Heading change is independent of position integration. It is exact.
     const delta = 0.3;
     const dt = 2;
     const s = step(
@@ -212,9 +213,10 @@ describe('step — turning', () => {
   it('traces a circle whose radius matches turningRadius', () => {
     const delta = 0.3;
     const R = turningRadius(DEFAULT_PARAMS, delta);
-    // For a left turn the instantaneous center is R to the left of the rear axle.
-    // Starting at origin heading +X, that center is (0, R). The forward-Euler
-    // integrator drifts slightly off the ideal circle, hence the loose tolerance.
+    // For a left turn, the instantaneous center sits R to the left of the
+    // rear axle. The car starts at the origin, heading +X, so that center is
+    // (0, R). The forward-Euler integrator drifts slightly off the ideal
+    // circle. This is why the tolerance is loose.
     const center = { x: 0, y: R };
     const s = step(
       makeState({ steeringAngle: delta }),
@@ -244,9 +246,10 @@ describe('step — turning', () => {
   });
 
   it('gives nearly the same result regardless of dt granularity', () => {
-    // One big step vs. many small steps over the same total time. Heading is
-    // integrated exactly, so it matches tightly; position is forward-Euler and
-    // differs slightly because the fixed 1/240 s sub-step is chunked differently.
+    // This compares one big step to many small steps over the same total
+    // time. Heading integrates exactly, so it matches tightly. Position uses
+    // forward-Euler, so it differs slightly. The fixed 1/240 s sub-step is
+    // chunked differently in each case.
     const input: StepInput = { ...HOLD_STEER, throttle: 1 };
     const big = step(
       makeState({ steeringAngle: 0.3 }),
@@ -287,7 +290,7 @@ describe('getCorners', () => {
     const fwd = p.wheelbase + p.frontOverhang;
     const halfW = p.bodyWidth / 2;
     const c = getCorners(makeState({ heading: Math.PI / 2 }), p);
-    // Facing +Y: forward maps to +Y, left maps to -X.
+    // The car faces +Y. Forward maps to +Y. Left maps to -X.
     expect(c.frontLeft[0]).toBeCloseTo(-halfW, 10);
     expect(c.frontLeft[1]).toBeCloseTo(fwd, 10);
   });

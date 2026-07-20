@@ -1,5 +1,6 @@
-// Kinematic bicycle model — no slip, no dampening.
-// State anchored at the rear axle center, heading in radians (0 = +X axis).
+// Kinematic bicycle model. It has no slip and no dampening.
+// State anchors at the rear axle center. Heading is in radians, where 0 means
+// the +X axis.
 
 export interface CarParams {
   /** Distance between front and rear axles (meters). */
@@ -33,7 +34,7 @@ export interface CarState {
   x: number;
   /** Rear axle center Y (meters, world space). */
   y: number;
-  /** Heading angle in radians (0 = pointing along +X, CCW positive). */
+  /** Heading angle in radians. 0 points along +X. Positive is CCW. */
   heading: number;
   /** Current steering angle in radians (+left, -right). */
   steeringAngle: number;
@@ -56,7 +57,8 @@ export interface StepInput {
 
 /**
  * Advance the car state by `dt` seconds.
- * Uses a fixed sub-step of 1/240 s for numerical accuracy on sharp turns.
+ * This uses a fixed sub-step of 1/240 s. That keeps the integration accurate
+ * on sharp turns.
  */
 export function step(
   state: CarState,
@@ -78,32 +80,33 @@ export function step(
     const subDt = Math.min(remaining, SUB_DT);
     remaining -= subDt;
 
-    // Update steering angle (clamp to ±maxSteeringAngle).
+    // Update the steering angle. Clamp it to ±maxSteeringAngle.
     if (!input.centerSteering) {
       if (input.steerDir !== 0) {
-        // Active steering: accumulate in the requested direction.
+        // Active steering. Accumulate in the requested direction.
         steeringAngle += input.steerDir * params.steeringRate * subDt;
         steeringAngle = Math.max(
           -params.maxSteeringAngle,
           Math.min(params.maxSteeringAngle, steeringAngle),
         );
       } else if (!input.holdSteering) {
-        // No steer input and not held: self-center toward 0° at steeringRate.
+        // No steer input, and steering is not held. Self-center toward 0° at
+        // steeringRate.
         const dec = params.steeringRate * subDt;
         steeringAngle =
           steeringAngle > 0
             ? Math.max(0, steeringAngle - dec)
             : Math.min(0, steeringAngle + dec);
       }
-      // holdSteering with steerDir === 0: leave steeringAngle unchanged.
+      // holdSteering is true and steerDir is 0. Leave steeringAngle unchanged.
     }
 
     if (input.throttle === 0) continue;
 
-    // Signed speed (forward = +, reverse = -).
+    // Signed speed. Positive means forward. Negative means reverse.
     const s = input.throttle * params.speed;
 
-    // Heading rate: dθ/dt = (s / L) * tan(δ).
+    // Heading rate. dθ/dt = (s / L) * tan(δ).
     const dTheta = (s / params.wheelbase) * Math.tan(steeringAngle) * subDt;
     heading += dTheta;
 
@@ -133,10 +136,11 @@ export function getCorners(state: CarState, params: CarParams): BodyCorners {
   const cos = Math.cos(heading);
   const sin = Math.sin(heading);
 
-  // Forward = heading direction, right = perpendicular (clockwise, i.e. -sin, cos).
+  // Forward is the heading direction. Right is perpendicular, in the
+  // clockwise sense: -sin, cos.
   const halfW = params.bodyWidth / 2;
-  const fwd = params.wheelbase + params.frontOverhang; // distance from rear axle to front face
-  const aft = -params.rearOverhang; // distance from rear axle to rear face (negative = behind)
+  const fwd = params.wheelbase + params.frontOverhang; // Distance from the rear axle to the front face.
+  const aft = -params.rearOverhang; // Distance from the rear axle to the rear face. Negative means behind.
 
   function corner(forward: number, lateral: number): [number, number] {
     return [
@@ -154,7 +158,7 @@ export function getCorners(state: CarState, params: CarParams): BodyCorners {
 }
 
 /**
- * Turning radius at the rear axle (Infinity when going straight).
+ * Turning radius at the rear axle. Returns Infinity when going straight.
  */
 export function turningRadius(
   params: CarParams,

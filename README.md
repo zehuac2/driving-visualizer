@@ -1,18 +1,18 @@
 # Driving Trajectory Visualizer
 
-A top-down tool for studying how a car sweeps through space during a maneuver.
-The defining feature is the **four-corner swept envelope**: as you drive, the
-path traced by each corner of the car body is drawn on-screen, letting you judge
-clearance and potential collisions at a glance.
+This tool shows, from a top-down view, how a car sweeps through space during a
+maneuver. Its main feature is the **four-corner swept envelope**. As you drive,
+the tool draws the path of each corner of the car body on screen. This lets you
+judge clearance and possible collisions at a glance.
 
 ## Trajectory model
 
-The simulation uses the **kinematic bicycle model** — pure geometry, no tire
-slip, no mass, no dampening.
+The simulation uses the **kinematic bicycle model**. This model uses pure
+geometry. It has no tire slip, no mass, and no dampening.
 
 ### State
 
-The car is represented by four scalar values:
+Four scalar values represent the car:
 
 | Variable            | Meaning                                             |
 | ------------------- | --------------------------------------------------- |
@@ -22,8 +22,8 @@ The car is represented by four scalar values:
 
 ### Integration
 
-Each animation frame the integrator runs in sub-steps of 1/240 s (to keep the
-Euler step accurate on sharp turns). Per sub-step:
+In each animation frame, the integrator runs in sub-steps of 1/240 s. This keeps
+the Euler step accurate on sharp turns. Each sub-step does the following:
 
 ```
 # Active steering (A/D held):
@@ -40,32 +40,33 @@ x  +=  s × cos(θ) × dt
 y  +=  s × sin(θ) × dt
 ```
 
-where `s = throttle × speed` (signed — negative for reverse) and `L` is the
-wheelbase. When `throttle = 0` the car does not move; there is no coasting or
-deceleration.
+Here, `s = throttle × speed`. This value is signed: negative for reverse. `L` is
+the wheelbase. When `throttle = 0`, the car does not move. There is no coasting
+and no deceleration.
 
 ### Geometry
 
-The instantaneous **turning radius** at the rear axle is:
+The turning radius at the rear axle, at any instant, is:
 
 ```
 R = L / tan(δ)       (→ ∞ when δ ≈ 0, i.e. straight line)
 ```
 
-The center of curvature (ICR) is perpendicular to the car's heading at distance
-`R` from the rear axle.
+The center of curvature (ICR) sits at distance `R` from the rear axle,
+perpendicular to the car's heading.
 
 ### Four-corner swept envelope
 
-Every frame the car moves, `getCorners()` projects the four body corners into
-world space:
+In every frame where the car moves, `getCorners()` projects the four body
+corners into world space:
 
 ```
 corner(fwd, lat) = (x + fwd·cos θ − lat·sin θ,
                     y + fwd·sin θ + lat·cos θ)
 ```
 
-where `fwd` and `lat` are longitudinal and lateral offsets from the rear axle:
+Here, `fwd` and `lat` are the longitudinal and lateral offsets from the rear
+axle:
 
 | Corner      | fwd                         | lat            |
 | ----------- | --------------------------- | -------------- |
@@ -74,26 +75,27 @@ where `fwd` and `lat` are longitudinal and lateral offsets from the rear axle:
 | Rear-left   | `−rearOverhang`             | `+bodyWidth/2` |
 | Rear-right  | `−rearOverhang`             | `−bodyWidth/2` |
 
-Each frame's four corner positions are appended to four growing polylines (one
-per corner, colour-coded). An optional translucent mesh fills the quadrilateral
-strip between successive corner quads, showing the total area occupied.
+Each frame, the tool appends the four corner positions to four growing
+polylines, one per corner. Each polyline has its own color. An optional
+translucent mesh can fill the quadrilateral strip between successive corner
+quads. This shows the total area the car occupies.
 
 ## Controls
 
-| Input     | Action                                                   |
-| --------- | -------------------------------------------------------- |
-| `W` / `↑` | Drive forward (stops immediately on release)             |
-| `S` / `↓` | Reverse                                                  |
-| `A` / `←` | Steer left — self-centers on release                     |
-| `D` / `→` | Steer right — self-centers on release                    |
-| `Space`   | Hold steering angle (prevents self-centering while held) |
-| `C`       | Center steering to 0° instantly                          |
-| Scroll    | Zoom                                                     |
-| Drag      | Pan                                                      |
+| Input     | Action                                                  |
+| --------- | ------------------------------------------------------- |
+| `W` / `↑` | Drive forward. Stops the instant you release the key.   |
+| `S` / `↓` | Reverse.                                                |
+| `A` / `←` | Steer left. Self-centers when you release the key.      |
+| `D` / `→` | Steer right. Self-centers when you release the key.     |
+| `Space`   | Hold the current steering angle. Blocks self-centering. |
+| `C`       | Center the steering angle to 0° instantly.              |
+| Scroll    | Zoom.                                                   |
+| Drag      | Pan.                                                    |
 
 ## Parameters
 
-All values are adjustable live via the bottom panel:
+You can adjust all values live, using the bottom panel:
 
 | Parameter          | Default | Range        |
 | ------------------ | ------- | ------------ |

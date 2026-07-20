@@ -1,6 +1,6 @@
-// React hook owning keyboard held-state. Attaches window listeners for the
-// lifetime of the component and exposes a stable `readInput()` the render loop
-// can call every frame without triggering re-renders.
+// React hook that owns keyboard held-state. It attaches window listeners for
+// the lifetime of the component. It exposes a stable `readInput()`. The
+// render loop can call this every frame without triggering re-renders.
 
 import { useCallback, useEffect, useRef } from 'react';
 import type { StepInput } from './CarModel.ts';

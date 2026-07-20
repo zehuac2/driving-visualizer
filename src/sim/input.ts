@@ -1,6 +1,6 @@
-// Pure key-mapping: resolve a set of held key codes into a continuous input
-// frame. The held-state tracking and window listeners live in the
-// `useKeyboardInput` hook; this function stays pure and testable.
+// Pure key-mapping. This resolves a set of held key codes into a continuous
+// input frame. The held-state tracking and window listeners live in the
+// `useKeyboardInput` hook. This function stays pure and testable.
 
 import type { StepInput } from './CarModel.ts';
 

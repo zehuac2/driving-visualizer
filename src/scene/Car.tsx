@@ -1,15 +1,15 @@
-// Declarative car visuals: a group anchored at the rear axle containing the
-// body, its outline, a heading arrow, and four wheels. Geometry is derived from
-// `params`, so changing a shape parameter rebuilds the meshes via React
-// reconciliation. The simulation loop mutates the forwarded refs each frame:
-// the group's position/rotation and the front wheels' steering rotation.
+// Declarative car visuals. A group anchored at the rear axle contains the
+// body, its outline, a heading arrow, and four wheels. Geometry derives from
+// `params`. Changing a shape parameter rebuilds the meshes through React
+// reconciliation. Each frame, the simulation loop mutates the forwarded refs:
+// the group's position and rotation, and the front wheels' steering rotation.
 
 import { useMemo, type RefObject } from 'react';
 import * as THREE from 'three';
 import type { CarParams } from '@/sim/CarModel.ts';
 
-const WHEEL_W = 0.22; // visual wheel width (meters)
-const WHEEL_L = 0.5; // visual wheel length (meters)
+const WHEEL_W = 0.22; // Visual wheel width, in meters.
+const WHEEL_L = 0.5; // Visual wheel length, in meters.
 
 const BODY_COLOR = 0x3a86ff;
 const BODY_OUTLINE = 0x90caff;
@@ -89,7 +89,8 @@ export function Car({
   const { wheelbase, frontOverhang, rearOverhang, bodyWidth } = params;
 
   const bodyLength = wheelbase + frontOverhang + rearOverhang;
-  // Body center relative to the rear axle (the group's local origin).
+  // Body center, relative to the rear axle. The rear axle is the group's
+  // local origin.
   const centerOffset = (wheelbase + frontOverhang - rearOverhang) / 2;
   const halfW = bodyWidth / 2;
   const wheelX = halfW + WHEEL_W / 2;
@@ -125,7 +126,7 @@ export function Car({
       {/* Heading arrow from the rear axle pointing forward. */}
       <arrowHelper args={arrowArgs} />
 
-      {/* Wheels (rear at the axle, front at +wheelbase). Front wheels steer. */}
+      {/* Wheels: rear at the axle, front at +wheelbase. Only front wheels steer. */}
       <Wheel position={[-wheelX, 0, 0]} />
       <Wheel position={[wheelX, 0, 0]} />
       <Wheel position={[-wheelX, wheelbase, 0]} wheelRef={frontLeftRef} />

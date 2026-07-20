@@ -1,8 +1,8 @@
 // Owns the R3F scene graph and the single per-frame simulation loop. Physics
-// state lives in refs and is advanced inside useFrame (never React state), and
-// the Three.js objects are mutated directly each frame. Rendering is on-demand:
-// the loop calls invalidate() only while the car or its steering is still
-// changing, so the canvas goes idle when nothing moves.
+// state lives in refs. useFrame advances it. It never lives in React state.
+// The loop mutates the Three.js objects directly each frame. Rendering is
+// on-demand: the loop calls invalidate() only while the car or its steering
+// is still changing. When nothing moves, the canvas goes idle.
 
 import { memo, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
 import * as THREE from 'three';
@@ -44,12 +44,13 @@ export interface SceneProps {
   ref?: Ref<SceneHandle>;
 }
 
-const INITIAL_HALF_HEIGHT = 30; // visible half-height in meters at default zoom
-const TELEMETRY_INTERVAL_MS = 66; // ~15 Hz panel updates
+const INITIAL_HALF_HEIGHT = 30; // Visible half-height, in meters, at default zoom.
+const TELEMETRY_INTERVAL_MS = 66; // About 15 Hz panel updates.
 const STEERING_EPS = 1e-4;
 
-// Memoized so the ~15 Hz telemetry-driven App re-render doesn't reconcile the
-// whole R3F subtree; Scene's props are referentially stable across those ticks.
+// Scene is memoized. This stops the ~15 Hz telemetry-driven App re-render
+// from reconciling the whole R3F subtree. Scene's props stay referentially
+// stable across those ticks.
 export const Scene = memo(function Scene({
   params,
   fillVisible,
@@ -60,7 +61,7 @@ export const Scene = memo(function Scene({
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
 
-  // Shared mutable state — never triggers React re-renders.
+  // Shared mutable state. This never triggers React re-renders.
   const carStateRef = useRef<CarState>(createInitialState());
   const carGroupRef = useRef<THREE.Group>(null);
   const frontLeftRef = useRef<THREE.Object3D>(null);
@@ -71,8 +72,9 @@ export const Scene = memo(function Scene({
 
   const { readInput } = useKeyboardInput(invalidate);
 
-  // Map the old [5, 200] m view-size range onto orthographic zoom. Captured
-  // from the first measured viewport so resizing doesn't reset the user's zoom.
+  // Map the old [5, 200] m view-size range onto orthographic zoom. This is
+  // captured from the first measured viewport, so resizing does not reset
+  // the user's zoom.
   const { initialZoom, minZoom, maxZoom } = useMemo(() => {
     const z = Math.max(1, size.height) / (2 * INITIAL_HALF_HEIGHT);
     return {
@@ -122,7 +124,7 @@ export const Scene = memo(function Scene({
       sweptPathRef.current?.append(getCorners(next, params));
     }
 
-    // Position the car (heading 0 = +X; local +Y is forward → rotate -90°).
+    // Position the car. heading 0 means +X. Local +Y is forward, so rotate -90°.
     const group = carGroupRef.current;
     if (group) {
       group.position.set(next.x, next.y, 0.02);
@@ -133,7 +135,7 @@ export const Scene = memo(function Scene({
     if (frontRightRef.current)
       frontRightRef.current.rotation.z = next.steeringAngle;
 
-    // Throttled telemetry so App re-renders don't reconcile the tree at 60 fps.
+    // Telemetry is throttled, so App re-renders don't reconcile the tree at 60 fps.
     const now = performance.now();
     if (now - lastTelemetryRef.current >= TELEMETRY_INTERVAL_MS) {
       lastTelemetryRef.current = now;
@@ -148,7 +150,7 @@ export const Scene = memo(function Scene({
       });
     }
 
-    // On-demand continuation: keep the loop alive only while something changes.
+    // On-demand continuation: keeps the loop alive only while something changes.
     const selfCentering =
       !input.holdSteering &&
       input.steerDir === 0 &&
